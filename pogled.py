@@ -4,7 +4,7 @@ import numpy as np
 
 def get_fen_from_pic():
     # Setup camera 
-    cap = cv2.VideoCapture(1) 
+    cap = cv2.VideoCapture(0) #! adjust 
     
 
     x = 23

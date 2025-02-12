@@ -54,7 +54,11 @@ while True:
             break
         if data == "move": #Če po socketu prejmemo move, roki vrnemo potezo
             seznam_koordinat = [] #Sprazne seznam koordinat
-            while roke.getStatus() != True:
+
+            #? Roke so izven kadra ko je TRUE !!!!!!!!!!11!!1111Q
+            while roke.getStatus() != False: # dokler roke ne pridejo v kader
+                pass
+            while roke.getStatus() != True: # dokler roke ne grejo iz kAdra
                     pass
 
             BnW = pogled.get_fen_from_pic() #iz slike vidi ali so polja prazna, ali imajo črne ali bele igure    
