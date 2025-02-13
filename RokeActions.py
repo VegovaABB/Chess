@@ -4,13 +4,13 @@ import time
 import threading
 
 class Roke:
-    def __init__(self):
+    def __init__(self, cap):
         # Initialize MediaPipe Hands
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.STATUS = False
         # Initialize OpenCV video self.capture
-        self.cap = cv2.VideoCapture(1)  # Use 0 for the default webcam
+        self.cap = cap  # Use 0 for the default webcam
 
     def getStatus(self):
         return self.STATUS
@@ -22,8 +22,8 @@ class Roke:
             ret, frame = self.cap.read()
 
             # Convert the frame to RGB for MediaPipe
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Process the frame to detect hands
             results = self.hands.process(rgb_frame)
 
@@ -37,7 +37,7 @@ class Roke:
                 self.STATUS = True
             else: self.STATUS = False
 
-            time.sleep(1)
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     roke = Roke()

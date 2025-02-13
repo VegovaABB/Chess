@@ -2,7 +2,7 @@
 
 def get_coords(x): #Vrne koordinate polja
 
-    start_coords = (52, 53) #Prilagodi po potrebi
+    start_coords = (50, 50) #Prilagodi po potrebi
 
     coords_dic = {
 

@@ -5,7 +5,9 @@ def get_fen(prev, curx):
     cur = ""
     p=0
     x=0
-    counter = 1   
+    counter = 1
+
+    if prev=='': return ''
 
     temp = ""
     for i in prev:
@@ -15,6 +17,7 @@ def get_fen(prev, curx):
         else:
             temp+=i
     prev=temp
+    
 
     for i in range(71):
         if prev[i].isalpha() == True and prev[i]!="/":

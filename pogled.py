@@ -2,9 +2,9 @@ import cv2
 import math
 import numpy as np
 
-def get_fen_from_pic():
+def get_fen_from_pic(cap):
     # Setup camera 
-    cap = cv2.VideoCapture(0) #! adjust 
+     #! adjust 
     
 
     x = 23
@@ -25,14 +25,14 @@ def get_fen_from_pic():
 
     fen = ""
     yellow_mask = cv2.inRange(frame, lowerb=np.array([91, 188, 210]), upperb=np.array([166, 247, 235]))
-    yellow_mask = cv2.dilate(yellow_mask, kernel, iterations = 2)
+    yellow_mask = cv2.dilate(yellow_mask, kernel, iterations = 3)
     yellow_mask = cv2.cvtColor(yellow_mask, cv2.COLOR_GRAY2BGR)
 
 
     #   rgb(24, 108, 56)
 
     green_mask = cv2.inRange(frame, lowerb=np.array([50, 100, 20]), upperb=np.array([130, 190, 50]))
-    green_mask = cv2.dilate(green_mask, kernel, iterations = 2)
+    green_mask = cv2.dilate(green_mask, kernel, iterations = 3)
     green_mask = cv2.cvtColor(green_mask, cv2.COLOR_GRAY2BGR)
 
     #cv2.imshow("", yellow_mask)
@@ -62,11 +62,11 @@ def get_fen_from_pic():
 
         # rišemo krogce
             cv2.circle(frame, (x+i, y+i), 2, [0, modra, 255], 2)
-        x += 41
+        x += 38
         if counter % 8==0:
             counter = 0
             x = 23
-            y += 52
+            y += 53
             
         counter += 1
         modra += 3
@@ -105,6 +105,7 @@ def get_fen_from_pic():
             
     return output
 
-print(get_fen_from_pic())
+#cap = cv2.VideoCapture(1)
+#print(get_fen_from_pic(cap))
 
   

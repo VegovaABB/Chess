@@ -7,16 +7,80 @@ import time #Za funkcije čakanja
 import pogled #S kamero pogleda ploščo in nam pove ali so polja prazna, oz. katere barve je figura na njih
 import Graphics #GUI za pokazat FEN
 import RokeActions, threading
+import cv2
+from chess_board import ChessBoard
+import pygame
+import chess
 
 HOST = "192.168.125.123" #IP od računalnika za namene socket komunikacije
 PORT = 65432 #Št. porta za namene socket komunikacije 
 
-roke = RokeActions.Roke()
-rokeThread = threading.Thread(target=roke.rokeVnSekud, args=[5,])
+def fen_to_usable(fen):
+        """Convert FEN string to a usable form."""
+        usable = ""
+        for char in fen:
+            if char.isalpha():
+                usable += char
+            elif char.isnumeric():
+                usable += "0" * int(char)
+            elif char ==  " ":
+                break
+        return usable
 
+def is_move_legal(prev_fen, new_fen):
+        """Validate moves using python-chess."""
+        board = chess.Board(prev_fen)
+        uci_move = get_uci(prev_fen, new_fen)
+        if not uci_move:
+            return False
+        move = chess.Move.from_uci(uci_move)
+        return move in board.legal_moves
 
-prev = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" #FEN začetne pozicije 
+def get_uci(prev_fen, new_fen):
+        """Generate UCI from FEN comparison."""
+        prev_usable = fen_to_usable(prev_fen)
+        new_usable = fen_to_usable(new_fen)
+        old_square, new_square = None, None
+
+        for i in range(64):
+            if prev_usable[i] != new_usable[i]:
+                if new_usable[i] == "0":
+                    old_square = i
+                elif new_usable[i] != "0":
+                    new_square = i
+
+        if old_square is not None and new_square is not None:
+            return f"{chr(old_square % 8 + 97)}{8 - old_square // 8}{chr(new_square % 8 + 97)}{8 - new_square // 8}"
+        return None
+
+cap = cv2.VideoCapture(1)
+
+roke = RokeActions.Roke(cap)
+rokeThread = threading.Thread(target=roke.rokeVnSekud, args=[5,]).start()
+
+#hess_game = ChessBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w")
+
+prev = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" #FEN začetne pozicije
 #prev = "1K2k2r/pppppppp/1q6/8/8/8/8/8"
+
+pygame.init()
+
+# Set up the game window
+screen = pygame.display.set_mode((600, 400))
+pygame.display.set_caption('Choose Game Mode')
+
+# Fonts
+font = pygame.font.SysFont('Arial', 32)
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+
+server_socket.listen(5)
+print(f'Server listening on {HOST}:{PORT}')
+# Game loop
+running = True
+starting_color = None
+game_mode = None  # 'human' or 'stockfish_vs_stockfish'
 
 def send_coords(c_socket, coords:list): #Roki pošlje koordinate po socketu (sprejme socket ki ga želi na clientu in pa seznam koordinat)
     c_socket.sendall(str(coords[0]).encode()) #Pošlje prvo koordinato
@@ -33,47 +97,68 @@ def send_coords(c_socket, coords:list): #Roki pošlje koordinate po socketu (spr
     c_socket.sendall(str(coords[5]).encode())
     time.sleep(0.1)
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
 
-server_socket.listen(5)
-print(f'Server listening on {HOST}:{PORT}')
 GotMove = False #Bool če ima potezo
 cords = []
 konec=["E", "0", "0", "0", "0", "0"] #Te koordinate pošljemo če se igra konča
 
+player_move=True
+
 while True:
     
     client_socket, addr = server_socket.accept() #Odpre socket
-    
+
     while True:
         
         # dobimo podatke od roke
         data = client_socket.recv(1024).decode('utf-8') # 1MB max
         if not data:
             break
+
         if data == "move": #Če po socketu prejmemo move, roki vrnemo potezo
             seznam_koordinat = [] #Sprazne seznam koordinat
 
             #? Roke so izven kadra ko je TRUE !!!!!!!!!!11!!1111Q
-            while roke.getStatus() != False: # dokler roke ne pridejo v kader
-                pass
-            while roke.getStatus() != True: # dokler roke ne grejo iz kAdra
+            prevprev=prev
+            prej=prev
+            while player_move:
+                while roke.getStatus() != False: # dokler roke ne pridejo v kader
                     pass
-
-            BnW = pogled.get_fen_from_pic() #iz slike vidi ali so polja prazna, ali imajo črne ali bele igure    
-            print(1)
-            prev = FEnotation.get_fen(prev, BnW) #Na podlagi tega ali so polja prazna in barv figur na njih nam pove katera figura je kje
-
-            Graphics.see_board(prev) #Poaže igro z GUI
+                print("rokice")    
+                while roke.getStatus() != True: # dokler roke ne grejo iz kAdra
+                        pass
+                print("ni rokic :(")
+                time.sleep(0.5)
+                BnW = pogled.get_fen_from_pic(cap) #iz slike vidi ali so polja prazna, ali imajo črne ali bele igure
+                print(BnW)
+                prev = FEnotation.get_fen(prevprev, BnW) #Na podlagi tega ali so polja prazna in barv figur na njih nam pove katera figura je kje
+                print(prev)
+                print(prev=='')
+                player_move=prev==''
+            #chess_game.update_fen(prev) #Poaže igro z GUI
+            #chess_game.draw_board()
             #poteza za stockfish
-            print(prev)
-            stock = stockfish_wrapper.get_move(prev + " b qk QK") 
-            move, temp = stock[0],  stock[1]
+            #?print(prev +" "+ fish_color+" qk QK")
+            Graphics.see_board(prev)
+            print("Legalna: ", is_move_legal(prej, prev))
 
+            move = None
+
+            print(prej, prev)
+            if(is_move_legal(prej, prev) == False):
+                move1 = get_uci(prej, prev)
+                move=move1[2]+move1[3]+move1[0]+move1[1]
+                temp=prej
+            else:
+                stock = stockfish_wrapper.get_move(prev +" b qk QK") 
+                move, temp = stock[0],  stock[1]
+
+            #stock = stockfish_wrapper.get_move(prev +" b qk QK") 
+            #move, temp = stock[0],  stock[1]
             print(move, CheckCoords.kera_figura(prev, move[:2]))
+            Graphics.see_board(prev)
 
-            
+            player_move=True
 
             if CheckCoords.kera_figura(prev, move[:2]) == "k" and move[2:] == "g8": 
                 
@@ -111,7 +196,7 @@ while True:
             else:
                 seznam_koordinat.append(coords.get_coords(move[2:]))                     # dobimo prve koordinate (ta kmet bo pojeden)    [(x, y, 0)]
                 seznam_koordinat[0].append(CheckCoords.Piece_height(prev, move[2:]))     # dobimo višino za prejšnjo potezo [(x, y, Z)]
-                seznam_koordinat.append((0, 650, 0))                                     # nesemo kmeta na (0, 650, 0)
+                seznam_koordinat.append((0,-300,0))                                     # nesemo kmeta na (0, 650, 0)
                 
                 seznam_koordinat.append(coords.get_coords(move[:2]))                     # dobimo koordinate kje je kmet, ki je pojedel
                 seznam_koordinat[2].append(CheckCoords.Piece_height(prev, move[:2]))     # dobimo višino za prejšnjo potezo
@@ -121,7 +206,8 @@ while True:
 
             print(seznam_koordinat)
             prev = temp
-            Graphics.see_board(prev)
+            Graphics.see_board(prev) #Poaže igro z GUI
+            
             GotMove = True
             cords.clear()
             time.sleep(0.3)

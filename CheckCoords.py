@@ -36,7 +36,7 @@ def Piece_height(fen, square): #Pričakuje FEN z števili namesto ničel
 
     if temp1[int(squares[square])-1].lower() == "q" or temp1[int(squares[square])-1].lower() == "k": #Za kralja in kraljico se spusti 120mm
         return "120"
-    elif temp1[int(squares[square])-1].lower() == "b" or temp1[int(squares[square])-1].lower() == "n": #Za konja in tekača se susti 140mm
+    elif temp1[int(squares[square])-1].lower() == "b" or temp1[int(squares[square])-1].lower() == "n" or temp1[int(squares[square])-1].lower() == "r": #Za konja, trdnjavo in tekača se susti 140mm
 
         return "140"
     
